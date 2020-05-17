@@ -11,6 +11,7 @@ import dev.kameshs.data.DockerContainer;
 import dev.kameshs.util.ContainerUtility;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 
@@ -26,6 +27,9 @@ public class ServiceWatcher implements Watcher<Service> {
 	@ConfigProperty(name = "dev.kameshs.watcher.kind-name",
 			defaultValue = "kind")
 	String kindName;
+
+	@Inject
+	KubernetesClient kubernetesClient;
 
 	@Inject
 	ContainerUtility containerUtil;

@@ -37,7 +37,8 @@ You can run your application using:
 [source,bash]
 ----
 ./mvnw clean package
-java -jar target/kind-node-controller-runner.jar
+java -Ddev.kameshs.watcher.kind-name=demos \
+  -jar target/kind-node-controller-runner.jar
 ---
 
 This will run the application in port `8080`, if you need to change the port and run on `9090` please do run as:
@@ -45,7 +46,9 @@ This will run the application in port `8080`, if you need to change the port and
 [source,bash]
 ----
 ./mvnw clean package
-java -Dquarkus.http.port=9090 -jar target/kind-node-controller-runner.jar
+java -Dquarkus.http.port=9090 \
+  -Ddev.kameshs.watcher.kind-name=demos \
+  -jar target/kind-node-controller-runner.jar
 ---
 
 == Deploy Demo App

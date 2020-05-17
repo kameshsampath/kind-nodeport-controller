@@ -1,15 +1,11 @@
 package dev.kameshs.util;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.InternetProtocol;
 import com.github.dockerjava.api.model.PortBinding;
@@ -50,31 +46,18 @@ public class ContainerUtility {
 				InternetProtocol.parse(protocol));
 		Binding binding = new Binding("127.0.0.1", String.valueOf(nodePort));
 		PortBinding portBinding = new PortBinding(binding, exposedPort);
-		List<Container> runningContainers =
-				client.listContainersCmd().exec();
-		var containerId = "";
-		if (runningContainers.isEmpty()) {
-			CreateContainerResponse containerResponse =
-					client.createContainerCmd("alpine/socat")
-							.withNetworkMode(KIND)
-							.withName(containerName)
-							.withExposedPorts(exposedPort)
-							.withPortSpecs(portSpec)
-							.withPortBindings(portBinding)
-							.withCmd("-dd", socatListen, socatConnect)
-							.exec();
-			containerId = containerResponse.getId();
-			client.startContainerCmd(containerId).exec();
-		} else {
-			Optional<Container> oContainer = runningContainers.stream()
-					.filter(c -> Arrays.asList(c.getNames())
-							.contains(containerName))
-					.findFirst();
-			if (oContainer.isPresent()) {
-				containerId = oContainer.get().getId();
-			}
+		CreateContainerResponse containerResponse =
+				client.createContainerCmd("alpine/socat")
+						.withNetworkMode(KIND)
+						.withName(containerName)
+						.withExposedPorts(exposedPort)
+						.withPortSpecs(portSpec)
+						.withPortBindings(portBinding)
+						.withCmd("-dd", socatListen, socatConnect)
+						.exec();
+		String containerId = containerResponse.getId();
+		client.startContainerCmd(containerId).exec();
 
-		}
 		return containerId;
 	}
 
