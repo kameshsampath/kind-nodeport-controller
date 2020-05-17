@@ -44,10 +44,26 @@ public class ServiceWatcher implements Watcher<Service> {
 		LOGGER.log(Level.INFO, "Service Event {0} Received for {1} ",
 				new Object[] {action, serviceName});
 
-		LOGGER.log(Level.INFO, "Service Type {0}", serviceType);
+		LOGGER.log(Level.FINE, "Service Type {0}", serviceType);
 
 		if (SERVICE_TYPE_NODE_PORT.equals(serviceType)) {
 			List<ServicePort> servicePorts = service.getSpec().getPorts();
+			var containers = DockerContainer
+					.findContainers(kindName, serviceName,
+							serviceNamespace);
+			// Remove all cotainers for this service
+			if (Action.MODIFIED == action) {
+				LOGGER.log(Level.INFO,
+						"Removing containers for service {0} ",
+						serviceName);
+				deleteContainers(containers);
+			} else if (Action.DELETED == action) {
+				LOGGER.log(Level.INFO,
+						"Removing containers for service {0} ",
+						serviceName);
+				deleteContainers(containers);
+				return;
+			}
 
 			for (ServicePort servicePort : servicePorts) {
 				int port = servicePort.getPort();
@@ -59,64 +75,19 @@ public class ServiceWatcher implements Watcher<Service> {
 									kindName,
 									serviceName, serviceNamespace,
 									protocol, port, nodePort);
-					LOGGER.log(Level.INFO, "NodePort proxy {0} ",
+					LOGGER.log(Level.FINE, "NodePort proxy {0} ",
 							containerName);
-					String portSpec = "127.0.0.1:" + nodePort + ":" + nodePort;
-					// Start
-					if (Action.ADDED == action) {
+					String portSpec =
+							"127.0.0.1:" + nodePort + ":" + nodePort;
+
+					// Start new container
+					if (Action.ADDED == action
+							|| Action.MODIFIED == action) {
 						LOGGER.log(Level.INFO, "Run new container",
 								containerName);
-						String containerId = containerUtil.run(
-								controlPlaneName, containerName,
-								nodePort, protocol, portSpec);
-						List<DockerContainer> containers =
-								DockerContainer.findByContainerId(containerId);
-						DockerContainer dockerContainer = null;
-						if (containers.isEmpty()) {
-							dockerContainer =
-									new DockerContainer();
-							dockerContainer.cluster = kindName;
-							dockerContainer.containerId = containerId;
-							dockerContainer.serviceName = serviceName;
-							dockerContainer.serviceNamespace = serviceNamespace;
-							dockerContainer.servicePort = port;
-							dockerContainer.id = null;
-						} else {
-							dockerContainer = containers.get(0);
-							dockerContainer.cluster = kindName;
-							dockerContainer.containerId = containerId;
-							dockerContainer.serviceName = serviceName;
-							dockerContainer.serviceNamespace = serviceNamespace;
-							dockerContainer.servicePort = port;
-						}
-
-						dockerContainer.persist();
-					}
-
-					// Stop and Relaunch
-					if (Action.MODIFIED == action) {
-						LOGGER.log(Level.INFO,
-								"Stop and Restart Container {0} ",
-								containerName);
-					}
-
-					// Stop and Remove
-					if (Action.DELETED == action) {
-						LOGGER.log(Level.INFO, "Stop and Remove Container {0} ",
-								containerName);
-						List<DockerContainer> containers =
-								DockerContainer.findContainer(
-										serviceName, serviceNamespace, port);
-						if (!containers.isEmpty()) {
-							containers.stream().forEach(e -> {
-								LOGGER.log(Level.INFO,
-										"Deleting container with Id {0} ",
-										e.containerId);
-								containerUtil.stop(e.containerId);
-								containerUtil.delete(e.containerId);
-								e.delete();
-							});
-						}
+						addNew(controlPlaneName, serviceName,
+								serviceNamespace, port, nodePort, protocol,
+								containerName, portSpec);
 					}
 				}
 			}
@@ -128,6 +99,49 @@ public class ServiceWatcher implements Watcher<Service> {
 	public void onClose(KubernetesClientException cause) {
 		// TODO stop and kill the containers
 
+	}
+
+	private void addNew(String controlPlaneName, String serviceName,
+			String serviceNamespace, int port, int nodePort, String protocol,
+			String containerName, String portSpec) {
+		String containerId = containerUtil.run(
+				controlPlaneName, containerName,
+				nodePort, protocol, portSpec);
+		List<DockerContainer> containers =
+				DockerContainer.findByContainerId(containerId);
+		DockerContainer dockerContainer = null;
+		if (containers.isEmpty()) { // INSERT
+			dockerContainer =
+					new DockerContainer();
+			dockerContainer.clusterName = kindName;
+			dockerContainer.containerId = containerId;
+			dockerContainer.serviceName = serviceName;
+			dockerContainer.serviceNamespace = serviceNamespace;
+			dockerContainer.servicePort = port;
+			dockerContainer.id = null;
+		} else { // UPDATE
+			dockerContainer = containers.get(0);
+			dockerContainer.clusterName = kindName;
+			dockerContainer.containerId = containerId;
+			dockerContainer.serviceName = serviceName;
+			dockerContainer.serviceNamespace = serviceNamespace;
+			dockerContainer.servicePort = port;
+		}
+
+		dockerContainer.persist();
+	}
+
+	private void deleteContainers(List<DockerContainer> containers) {
+		if (!containers.isEmpty()) {
+			containers.stream().forEach(e -> {
+				LOGGER.log(Level.INFO,
+						"Deleting container with Id {0} ",
+						e.containerId);
+				containerUtil.stop(e.containerId);
+				containerUtil.delete(e.containerId);
+				e.delete();
+			});
+		}
 	}
 
 }

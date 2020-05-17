@@ -13,7 +13,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 public class DockerContainer extends PanacheEntity {
 
 	@Column(name = "cluster_name", unique = true, nullable = false)
-	public String cluster;
+	public String clusterName;
 
 	@Column(name = "container_id", unique = true, nullable = false)
 	@NotNull
@@ -31,12 +31,20 @@ public class DockerContainer extends PanacheEntity {
 	@NotNull
 	public int servicePort;
 
-	public static List<DockerContainer> findContainer(String clusterName,
+	public static List<DockerContainer> findContainers(String clusterName,
 			String serviceName,
 			String serviceNamespace, int port) {
 		return find(
 				"clusterName=?1 and serviceName=?2 and serviceNamespace=?3 and servicePort=?4",
-				serviceName, serviceNamespace, port).list();
+				clusterName, serviceName, serviceNamespace, port).list();
+	}
+
+	public static List<DockerContainer> findContainers(String clusterName,
+			String serviceName,
+			String serviceNamespace) {
+		return find(
+				"clusterName=?1 and serviceName=?2 and serviceNamespace=?3",
+				clusterName, serviceName, serviceNamespace).list();
 	}
 
 	public static List<DockerContainer> findByContainerId(String containerId) {
