@@ -89,7 +89,7 @@ Now to access the service from your local host just do `localhost:32120` which s
 
 == Open Issues
 
-This project is still under lots of development, please check the issues to open new one or check existing ones.
+This project is still under lots of development, please check the https://github.com/kameshsampath/kind-nodeport-controller/issues[issues] to open new one or check existing ones.
 
 == Powered By
 

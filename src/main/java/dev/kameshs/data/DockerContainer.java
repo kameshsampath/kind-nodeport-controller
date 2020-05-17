@@ -12,23 +12,22 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 // TODO add indexes
 public class DockerContainer extends PanacheEntity {
 
-	@Column(name = "cluster_name", unique = true)
-	@NotNull
+	@Column(name = "cluster_name", unique = true, nullable = false)
 	public String cluster;
 
-	@Column(name = "container_id", unique = true)
+	@Column(name = "container_id", unique = true, nullable = false)
 	@NotNull
 	public String containerId;
 
-	@Column(name = "service_name")
+	@Column(name = "service_name", nullable = false)
 	@NotNull
 	public String serviceName;
 
-	@Column(name = "service_namespace")
+	@Column(name = "service_namespace", nullable = false)
 	@NotNull
 	public String serviceNamespace;
 
-	@Column(name = "service_port")
+	@Column(name = "service_port", nullable = false)
 	@NotNull
 	public int servicePort;
 
