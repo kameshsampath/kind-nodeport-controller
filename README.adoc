@@ -1,0 +1,95 @@
+= Kind NodePort Helper
+
+With a https://kubernetes.io[Kubernetes] cluster using https://kind.sigs.k8s.io/[kind], there is no direct way to access the kubernetes services. With Docker for Mac it becomes even more difficult as the Docker for Mac the `docker0` bridge is not exposed.
+
+WARNING: Not for production use
+
+== Pre-requisites
+
+- https://www.docker.com/products/docker-desktop[Docker Desktop for Mac or Windows]
+- https://kind.sigs.k8s.io/[kind]
+- https://kubernetes.io/docs/tasks/tools/install-kubectl/[kubectl]
+
+== Start a kind cluster
+
+[source,bash]
+----
+mkdir ~/demo 
+cd ~/demo
+export KUBECONFIG=~/demo/.kube/config
+kind create cluster --name demo
+----
+
+NOTE: Wait for kind cluster to get started
+
+A successful start will show the following output for `kubectl get nodes`
+
+[source,bash]
+----
+NAME                    STATUS   ROLES    AGE   VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE       KERNEL-VERSION     CONTAINER-RUNTIME
+demo-control-plane   Ready    master   13h   v1.18.2   172.19.0.2    <none>        Ubuntu 19.10   4.19.76-linuxkit   containerd://1.3.3-14-g449e9269
+----
+
+== Running the application
+
+You can run your application using:
+
+[source,bash]
+----
+./mvnw clean package
+java -jar target/kind-node-controller-runner.jar
+---
+
+This will run the application in port `8080`, if you need to change the port and run on `9090` please do run as:
+
+[source,bash]
+----
+./mvnw clean package
+java -Dquarkus.http.port=9090 -jar target/kind-node-controller-runner.jar
+---
+
+== Deploy Demo App
+
+[source,bash]
+----
+# create demos namespace
+kubectl create ns demos
+# shift to demos namespace
+kubectl config set-context --current --namespace=demos
+# deploy demo app
+kubectl apply -f example/app.yaml
+----
+
+Once the application is deployed successfully, check the Kubernetes services to know the NodePort:
+
+[source,bash]
+----
+kubectl get svc -n demos
+----
+
+== Expose NodePort to localhost
+
+To access the service `myapp` using its NodePort from the host, run the following API call(assumes the kind-node-controller application is running on `8080`)
+
+[source,bash]
+----
+curl localhost:8080/service/expose/demos
+----
+
+If you do a `docker ps`, you will notice a small node-port-controller container named `demos-myapp-demos-tcp-8080-32120` will be started.
+
+NOTE: The NodePort `32120` in the above example might vary in your deployment
+
+== Accessing the service
+
+Now to access the service from your local host just do `localhost:32120` which should return an response like **Aloha b4e860e505b3:1**
+
+== Open Issues
+
+This project is still under lots of development, please check the issues to open new one or check existing ones.
+
+== Powered By
+
+This project is built using Quarkus, the Supersonic Subatomic Java Framework.
+
+If you want to learn more about Quarkus, please visit its website: https://quarkus.io/.
