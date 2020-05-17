@@ -75,6 +75,7 @@ public class ServiceWatcher implements Watcher<Service> {
 						if (containers.isEmpty()) {
 							dockerContainer =
 									new DockerContainer();
+							dockerContainer.cluster = kindName;
 							dockerContainer.containerId = containerId;
 							dockerContainer.serviceName = serviceName;
 							dockerContainer.serviceNamespace = serviceNamespace;
@@ -82,6 +83,7 @@ public class ServiceWatcher implements Watcher<Service> {
 							dockerContainer.id = null;
 						} else {
 							dockerContainer = containers.get(0);
+							dockerContainer.cluster = kindName;
 							dockerContainer.containerId = containerId;
 							dockerContainer.serviceName = serviceName;
 							dockerContainer.serviceNamespace = serviceNamespace;

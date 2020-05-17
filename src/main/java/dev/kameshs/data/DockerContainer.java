@@ -4,6 +4,7 @@ import java.util.List;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
 @Entity
@@ -11,18 +12,31 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 // TODO add indexes
 public class DockerContainer extends PanacheEntity {
 
+	@Column(name = "cluster_name", unique = true)
+	@NotNull
+	public String cluster;
+
 	@Column(name = "container_id", unique = true)
+	@NotNull
 	public String containerId;
+
 	@Column(name = "service_name")
+	@NotNull
 	public String serviceName;
+
 	@Column(name = "service_namespace")
+	@NotNull
 	public String serviceNamespace;
+
 	@Column(name = "service_port")
+	@NotNull
 	public int servicePort;
 
-	public static List<DockerContainer> findContainer(String serviceName,
+	public static List<DockerContainer> findContainer(String clusterName,
+			String serviceName,
 			String serviceNamespace, int port) {
-		return find("serviceName=?1 and serviceNamespace=?2 and servicePort=?3",
+		return find(
+				"clusterName=?1 and serviceName=?2 and serviceNamespace=?3 and servicePort=?4",
 				serviceName, serviceNamespace, port).list();
 	}
 
